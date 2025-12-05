@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraHue</title>
+    <!-- PLACEHOLDER FOR ADSENSE CODE (MUST BE REPLACED) -->
+    <!-- CRITICAL: Replace [YOUR_ADSENSE_PUBLISHER_ID] with your actual AdSense ID -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=[YOUR_ADSENSE_PUBLISHER_ID]"
+     crossorigin="anonymous"></script>
+    <!-- END ADSENSE PLACEHOLDER -->
+
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Dark Mode Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* Slate 900 - Deep Dark Blue */
+        }
+        .card {
+            background-color: #1E293B; /* Slate 800 - Slightly lighter background for containers */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+        }
+        .color-block {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .color-block:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.7);
+        }
+        .glow-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(6, 182, 212, 0.5); /* Initial cyan glow */
+        }
+        .glow-button:hover {
+            background-color: #06B6D4; /* Cyan 500 */
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.8); /* Stronger glow */
+        }
+        /* Custom input styling within gradient sections */
+        .input-mode input[type="text"],
+        .input-mode input[type="file"] {
+            background-color: #334155; /* Slate 700 for better contrast */
+            border: 1px solid #475569; /* Slate 600 border */
+        }
+        .trend-year-button {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .trend-year-button.active {
+            background-color: #E879F9; /* Fuchsia 400 */
+            color: #1E293B;
+            font-weight: bold;
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(232, 121, 249, 0.8);
+        }
+        .hero-color-block {
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* No drop shadow on text per request */
+        }
+        /* RAINBOW GRADIENT STYLE for Title */
+        .rainbow-text {
+            background-image: linear-gradient(to right, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-100 flex flex-col items-center justify-between p-4">
+
+    <!-- Global Container for all Views -->
+    <div class="w-full max-w-5xl flex-grow">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 onclick="renderView('homeView')" class="text-6xl font-extrabold text-transparent bg-clip-text rainbow-text mb-2 cursor-pointer">
+                AuraHue
+            </h1>
+            <p class="text-xl text-gray-400 font-light">Palette Generator & Color Theorist</p>
+        </header>
+
+        <!-- 1. HOME VIEW: Palette Generator -->
+        <div id="homeView" class="block">
+            <!-- Main Card Container -->
+            <div class="card p-6 md:p-10 rounded-xl mb-8">
+                <h2 class="text-2xl font-semibold mb-6 text-cyan-300">Generate Your Palette</h2>
+                
+                <!-- Input Sections - Now with Gradients -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    
+                    <!-- 1. Text Prompt Section (Indigo/Blue Gradient) -->
+                    <div id="textMode" class="input-mode p-6 rounded-xl shadow-2xl bg-gradient-to-br from-indigo-900/70 to-slate-800/70">
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-300">1. Describe a Concept</h3>
+                        <p class="text-gray-400 mb-4">Describe the feeling or scene you want to capture in color.</p>
+                        <input
+                            id="colorPrompt"
+                            type="text"
+                            placeholder="E.g., A minimalist Tokyo cafe at sunset, or Ancient Greek marble statues."
+                            class="w-full p-3 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
+                        >
+                        <div class="flex justify-center mt-6">
+                            <button
+                                id="generateTextButton"
+                                onclick="generateTextPalette()"
+                                class="glow-button w-4/5 max-w-sm px-6 py-3 rounded-lg bg-cyan-600 text-white font-bold hover:bg-cyan-500"
+                            >
+                                Generate Palette from Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Image Prompt Section (Emerald/Green Gradient) -->
+                    <div id="imageMode" class="input-mode p-6 rounded-xl shadow-2xl bg-gradient-to-br from-emerald-900/70 to-slate-800/70">
+                        <h3 class="text-xl font-semibold mb-3 text-emerald-300">2. Upload an Image</h3>
+                        <p class="text-gray-400 mb-4">Upload an image to extract a cohesive color palette from its contents.</p>
+                        <div class="flex flex-col md:flex-row gap-4 mb-4 items-center">
+                            <input
+                                id="imageUpload"
+                                type="file"
+                                accept="image/*"
+                                class="flex-grow p-3 rounded-lg text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500 file:text-white hover:file:bg-cyan-600"
+                            >
+                            <img id="imagePreview" class="hidden w-24 h-24 object-cover rounded-lg border-2 border-cyan-500" src="" alt="Image Preview">
+                        </div>
+                        <input
+                            id="imagePrompt"
+                            type="text"
+                            placeholder="Optional: Describe specific colors to focus on in the image."
+                            class="w-full p-3 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
+                        >
+                        <div class="flex justify-center mt-6">
+                            <button
+                                id="generateImageButton"
+                                onclick="generateImagePalette()"
+                                class="glow-button w-4/5 max-w-sm px-6 py-3 rounded-lg bg-cyan-600 text-white font-bold hover:bg-cyan-500"
+                            >
+                                Generate Palette from Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Indicator & Error Message -->
+                <div id="loadingIndicator" class="hidden text-center text-cyan-400 p-4 mt-8">
+                    <svg class="animate-spin h-5 w-5 mr-3 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyzing aura and mixing hues...
+                </div>
+                <div id="errorMessage" class="hidden text-center text-red-400 p-4 rounded-lg bg-gray-700 mt-8"></div>
+
+                <!-- Palette Output Area -->
+                <div id="paletteOutput" class="mt-8"></div>
+
+                <!-- Citation Area -->
+                <div id="citationArea" class="mt-6 text-xs text-gray-500 hidden p-3 rounded-lg bg-gray-800 border border-gray-700">
+                    <p class="font-semibold mb-1">Sources used for grounding:</p>
+                    <ul id="citationList" class="list-disc list-inside space-y-1"></ul>
+                </div>
+            </div>
+            
+            <!-- COLOR TRENDS SECTION (Navigation) -->
+            <div class="card p-6 md:p-10 rounded-xl">
+                <h2 class="text-2xl font-semibold mb-6 text-fuchsia-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    Color Trends by Year (1955 - 2026)
+                </h2>
+                
+                <div id="trendsHomeButtons" class="flex flex-wrap gap-3 mb-6 max-h-48 overflow-y-auto p-2 bg-gray-800 rounded-lg">
+                    <!-- Buttons will be injected here -->
+                </div>
+
+                <div id="trendsContentHint" class="text-gray-400 min-h-[50px] p-4 rounded-lg bg-gray-700">
+                    <p>Select a year above (1955 - 2026) to instantly view the corresponding Color of the Year and trending palettes.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. TRENDS DETAIL VIEW -->
+        <div id="trendsDetailView" class="hidden">
+            <!-- Notification Box -->
+            <div id="notification-box" class="fixed top-5 right-5 z-50 transition-all duration-300 opacity-0 transform translate-x-full">
+                <div class="bg-secondary-green text-white px-5 py-3 rounded-xl shadow-2xl font-semibold flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="notification-message">Hex code copied to clipboard!</span>
+                </div>
+            </div>
+
+            <!-- Trends Content -->
+            <div id="trendsDetailContent" class="card p-6 md:p-10 rounded-xl">
+                <!-- Content injected by JS -->
+            </div>
+
+            <!-- Trends Navigation at the bottom -->
+            <div class="card p-6 md:p-10 rounded-xl mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-fuchsia-300">Explore Other Years:</h3>
+                 <div id="trendsBottomButtons" class="flex flex-wrap gap-3 max-h-48 overflow-y-auto p-2 bg-gray-800 rounded-lg">
+                    <!-- Buttons will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer for Policy/Info Links (CRITICAL FOR ADSENSE) -->
+    <footer class="w-full max-w-5xl mt-10 p-4 border-t border-gray-700 text-center text-sm text-gray-500">
+        <p class="mb-3">© 2025 AuraHue | Operated by Matthew Marcus</p>
+        <div class="flex justify-center space-x-4">
+            <a href="about.html" class="hover:text-cyan-400 transition">About Us</a>
+            <span class="text-gray-600">|</span>
+            <a href="contact.html" class="hover:text-cyan-400 transition">Contact Us</a>
+            <span class="text-gray-600">|</span>
+            <a href="privacy.html" class="hover:text-cyan-400 transition">Privacy Policy</a>
+            <span class="text-gray-600">|</span>
+            <a href="terms.html" class="hover:text-cyan-400 transition">Terms of Service</a>
+        </div>
+    </footer>
+
+
+    <script>
+        // --- GLOBAL VARIABLES ---
+        const apiKey = ""; 
+        const modelName = 'gemini-2.5-flash-preview-09-2025';
+        let notificationTimeout;
+
+        // --- COLOR DATABASE (1955-2026) ---
+        // Contains metadata for the main color of the year. 
+        // Palettes are now generated algorithmically to ensure uniqueness.
+        const COLOR_DB = {
+            "2026": { name: "Digital Dawn", hex: "#30E0A0", desc: "A vibrant, yet calming mint green symbolizing sustainable digital optimism." },
+            "2025": { name: "Transcendence Blue", hex: "#4A6E95", desc: "A muted blue-gray reflecting the blurring of physical and digital reality." },
+            "2024": { name: "Peach Fuzz", hex: "#FFBE98", desc: "A velvety peach tone nurturing calm and connection." },
+            "2023": { name: "Viva Magenta", hex: "#BB2649", desc: "A brave and fearless red, promoting joy and optimism." },
+            "2022": { name: "Very Peri", hex: "#6667AB", desc: "A dynamic periwinkle blue with a violet-red undertone." },
+            "2021": { name: "Ultimate Gray & Illuminating", hex: "#939597, #F5DF4D", desc: "Strength and positivity supported by rock-solid reliability." },
+            "2020": { name: "Classic Blue", hex: "#0F4C81", desc: "Instilling calm, confidence, and connection." },
+            "2019": { name: "Living Coral", hex: "#FF6F61", desc: "An animating and life-affirming coral hue." },
+            "2018": { name: "Ultra Violet", hex: "#5F4B8B", desc: "Inventive and imaginative, lighting the way to the future." },
+            "2017": { name: "Greenery", hex: "#88B04B", desc: "A fresh and zesty yellow-green shade." },
+            "2016": { name: "Rose Quartz & Serenity", hex: "#F7CAC9, #91A8D0", desc: "A blend of two shades reflecting wellness and gender fluidity." },
+            "2015": { name: "Marsala", hex: "#955251", desc: "A naturally robust and earthy wine red." },
+            "2014": { name: "Radiant Orchid", hex: "#B163A3", desc: "An enchanting harmony of fuchsia and purple." },
+            "2013": { name: "Emerald", hex: "#009473", desc: "Lively, radiant, lush green." },
+            "2012": { name: "Tangerine Tango", hex: "#DD4124", desc: "A spirited, reddish orange." },
+            "2011": { name: "Honeysuckle", hex: "#D94F70", desc: "A dynamic reddish pink." },
+            "2010": { name: "Turquoise", hex: "#40E0D0", desc: "A luminous blue-green." },
+            "2009": { name: "Mimosa", hex: "#FFC024", desc: "A warm, engaging yellow." },
+            "2008": { name: "Blue Iris", hex: "#5A5B9F", desc: "A balanced blue-purple." },
+            "2007": { name: "Chili Pepper", hex: "#9B1B30", desc: "Deep, spicy red." },
+            "2006": { name: "Sand Dollar", hex: "#DEC6B6", desc: "A natural neutral." },
+            "2005": { name: "Blue Turquoise", hex: "#53B0AE", desc: "The color of the ocean." },
+            "2004": { name: "Tigerlily", hex: "#E2583E", desc: "A potent orange." },
+            "2003": { name: "Aqua Sky", hex: "#7BC4C4", desc: "Cool and calming." },
+            "2002": { name: "True Red", hex: "#BF1932", desc: "A patriotic red." },
+            "2001": { name: "Fuchsia Rose", hex: "#C74375", desc: "Vivid and passionate." },
+            "2000": { name: "Cerulean", hex: "#9BB7D4", desc: "The color of the millennium." },
+            "1999": { name: "Digital Blue", hex: "#0066FF", desc: "The electric blue of the early internet." },
+            "1998": { name: "Dark Teal", hex: "#006666", desc: "Sophisticated and moody corporate tones." },
+            "1997": { name: "Spiced Coral", hex: "#CD5C5C", desc: "Warm, earthy global influences." },
+            "1996": { name: "Charcoal Gray", hex: "#36454F", desc: "The muted, anti-fashion statement of grunge." },
+            "1995": { name: "Hunter Green", hex: "#355E3B", desc: "Deep, forest tones popular in cars and interiors." },
+            "1994": { name: "Sunflower Yellow", hex: "#FFDA03", desc: "Bright, happy commercialism." },
+            "1993": { name: "Dusty Rose", hex: "#C9A9A6", desc: "A holdover from the 80s, but flatter." },
+            "1992": { name: "Cobalt Blue", hex: "#0047AB", desc: "Strong, primary artistic expression." },
+            "1991": { name: "Mauve", hex: "#E0B0FF", desc: "The defining neutral-purple of the decade." },
+            "1990": { name: "Neon Green", hex: "#39FF14", desc: "The tail end of 80s neon excess." },
+            "1989": { name: "Electric Pink", hex: "#FF00CC", desc: "High visibility and synthetic energy." },
+            "1988": { name: "Acid Wash Blue", hex: "#87CEEB", desc: "The color of processed denim." },
+            "1987": { name: "Power Red", hex: "#D22B2B", desc: "Bold, corporate dominance." },
+            "1986": { name: "Turquoise", hex: "#40E0D0", desc: "Southwestern and Memphis design staple." },
+            "1985": { name: "Miami Pink", hex: "#FF69B4", desc: "Tropical art deco revival." },
+            "1984": { name: "Purple Rain", hex: "#800080", desc: "Prince-inspired royalty." },
+            "1983": { name: "Graphite", hex: "#383838", desc: "High-tech industrial design." },
+            "1982": { name: "Preppy Green", hex: "#008000", desc: "Country club aesthetics." },
+            "1981": { name: "Metallic Silver", hex: "#C0C0C0", desc: "Futuristic chrome." },
+            "1980": { name: "Gold", hex: "#FFD700", desc: "Opulence and excess." },
+            "1979": { name: "Disco Silver", hex: "#E5E4E2", desc: "Reflective mirror balls." },
+            "1978": { name: "Brown", hex: "#8B4513", desc: "Natural leather and wood." },
+            "1977": { name: "Rust Orange", hex: "#B7410E", desc: "Warm, baked earth tones." },
+            "1976": { name: "Bicentennial Blue", hex: "#000080", desc: "Patriotic celebration." },
+            "1975": { name: "Avocado", hex: "#568203", desc: "The appliance king." },
+            "1974": { name: "Harvest Gold", hex: "#DAA520", desc: "The partner to Avocado." },
+            "1973": { name: "Burnt Sienna", hex: "#E97451", desc: "Warm clay and brick." },
+            "1972": { name: "Mustard", hex: "#FFDB58", desc: "Muted yellow optimism." },
+            "1971": { name: "Psychedelic Purple", hex: "#660099", desc: "Counter-culture residue." },
+            "1970": { name: "Olive Drab", hex: "#6B8E23", desc: "Utility and military influence." },
+            "1969": { name: "Moon Gray", hex: "#DCDCDC", desc: "The lunar landing aesthetic." },
+            "1968": { name: "Revolution Red", hex: "#CC0000", desc: "Political upheaval and intensity." },
+            "1967": { name: "Sunshine Yellow", hex: "#FFD700", desc: "Summer of Love positivity." },
+            "1966": { name: "Mod Black/White", hex: "#000000, #FFFFFF", desc: "Op-Art contrast." },
+            "1965": { name: "Pop Art Blue", hex: "#0000FF", desc: "Comic book primary colors." },
+            "1964": { name: "British Red", hex: "#C8102E", desc: "The British Invasion." },
+            "1963": { name: "Camelot Gold", hex: "#C5B358", desc: "Kennedy era elegance." },
+            "1962": { name: "Teal Blue", hex: "#367588", desc: "Mid-century corporate." },
+            "1961": { name: "Pillbox Pink", hex: "#FFB6C1", desc: "Jackie O fashion." },
+            "1960": { name: "Atomic Orange", hex: "#FF9966", desc: "Googie architecture accents." },
+            "1959": { name: "Tailfin Turquoise", hex: "#40E0D0", desc: "Automotive exuberance." },
+            "1958": { name: "Diner Red", hex: "#DC143C", desc: "Vinyl stool upholstery." },
+            "1957": { name: "Kitchen Yellow", hex: "#FCE883", desc: "Sunny domesticity." },
+            "1956": { name: "Elvis Pink", hex: "#FC0FC0", desc: "Rock and roll shock." },
+            "1955": { name: "Mint Green", hex: "#98FF98", desc: "The quintessential 50s shade." }
+        };
+
+        // --- PALETTE GENERATION LOGIC ---
+
+        // Helper to convert HSL to Hex
+        function hslToHex(h, s, l) {
+            l /= 100;
+            const a = s * Math.min(l, 1 - l) / 100;
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+        }
+
+        // Helper to get HSL from Hex
+        function hexToHSL(H) {
+            let r = 0, g = 0, b = 0;
+            if (H.length == 4) {
+                r = "0x" + H[1] + H[1]; g = "0x" + H[2] + H[2]; b = "0x" + H[3] + H[3];
+            } else if (H.length == 7) {
+                r = "0x" + H[1] + H[2]; g = "0x" + H[3] + H[4]; b = "0x" + H[5] + H[6];
+            }
+            r /= 255; g /= 255; b /= 255;
+            let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin;
+            let h = 0, s = 0, l = 0;
+
+            if (delta == 0) h = 0;
+            else if (cmax == r) h = ((g - b) / delta) % 6;
+            else if (cmax == g) h = (b - r) / delta + 2;
+            else h = (r - g) / delta + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+            l = (cmax + cmin) / 2;
+            s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+            s = +(s * 100).toFixed(1);
+            l = +(l * 100).toFixed(1);
+            return {h, s, l};
+        }
+
+        /**
+         * Generates 5 VISUALLY DISTINCT palettes for a given base color.
+         */
+        function generateDistinctPalettes(baseHex, yearName) {
+            const cleanHex = baseHex.split(',')[0].trim(); // Handle dual colors
+            const hsl = hexToHSL(cleanHex);
+            
+            const palettes = [];
+
+            // 1. Monochromatic (Shades & Tints)
+            const mono = [
+                cleanHex,
+                hslToHex(hsl.h, hsl.s, Math.max(10, hsl.l - 40)),
+                hslToHex(hsl.h, hsl.s, Math.max(20, hsl.l - 20)),
+                hslToHex(hsl.h, hsl.s, Math.min(80, hsl.l + 20)),
+                hslToHex(hsl.h, hsl.s, Math.min(95, hsl.l + 40)),
+                "#FFFFFF" 
+            ];
+            palettes.push({ theme: "Monochromatic Depth", colors: mono });
+
+            // 2. Complementary (High Contrast)
+            const compH = (hsl.h + 180) % 360;
+            const comp = [
+                cleanHex,
+                hslToHex(compH, hsl.s, hsl.l),
+                hslToHex(compH, 20, 90), // Very light comp
+                hslToHex(hsl.h, 20, 20), // Dark base
+                "#000000",
+                "#FFFFFF"
+            ];
+            palettes.push({ theme: "High Contrast Complement", colors: comp });
+
+            // 3. Analogous (Harmonious Neighbors)
+            const ana = [
+                cleanHex,
+                hslToHex((hsl.h + 30) % 360, hsl.s, hsl.l),
+                hslToHex((hsl.h - 30 + 360) % 360, hsl.s, hsl.l),
+                hslToHex(hsl.h, 10, 90), // Neutral
+                hslToHex(hsl.h, 5, 20),  // Dark Neutral
+                hslToHex((hsl.h + 15) % 360, hsl.s - 20, hsl.l + 10)
+            ];
+            palettes.push({ theme: "Analogous Harmony", colors: ana });
+
+            // 4. Triadic (Vibrant & Pop)
+            const tri = [
+                cleanHex,
+                hslToHex((hsl.h + 120) % 360, hsl.s, hsl.l),
+                hslToHex((hsl.h + 240) % 360, hsl.s, hsl.l),
+                "#1A1A1A",
+                "#F0F0F0",
+                hslToHex(hsl.h, 0, 50) // Gray
+            ];
+            palettes.push({ theme: "Vibrant Triad", colors: tri });
+
+            // 5. Muted / Vintage (Desaturated)
+            const muted = [
+                cleanHex,
+                hslToHex(hsl.h, 10, hsl.l), // Grayed version
+                "#D2B48C", // Tan
+                "#556B2F", // Olive
+                "#8B4513", // Brown
+                "#F5F5DC"  // Beige
+            ];
+            palettes.push({ theme: "Vintage Muted", colors: muted });
+
+            return palettes;
+        }
+
+        // --- Core Functions: Color Trends (Static) ---
+        function getTrendDataForYear(year) {
+            const data = COLOR_DB[year];
+            if (!data) return null; // Or generate fallback
+
+            // Generate the unique palettes on the fly based on the year's specific hex
+            const palettes = generateDistinctPalettes(data.hex, data.name);
+            
+            // Map to expected structure with names
+            const formattedPalettes = palettes.map(p => ({
+                theme: p.theme,
+                colors: p.colors.map(hex => ({ name: "Generated", hex: hex, description: "" }))
+            }));
+
+            return {
+                colorOfTheYear: { name: data.name, hex: data.hex, description: data.desc },
+                trendingPalettes: formattedPalettes
+            };
+        }
+
+        async function fetchAndRenderColorTrends(year) {
+            const yearStr = String(year);
+            const trendsData = getTrendDataForYear(yearStr); // Use the new generator
+            
+            if (!trendsData) {
+                // ... error handling ...
+                return;
+            }
+
+            renderView('trendsDetailView');
+            renderTrendsDetail(yearStr, trendsData);
+            highlightActiveYear(year);
+        }
+
+        // --- Utility Functions (Conversions, etc.) ---
+        
+        function getDetailedColorInfo(hex) {
+            let cleanHex = hex.replace('#', '').trim();
+            if (cleanHex.length === 3) cleanHex = cleanHex.split('').map(c => c + c).join('');
+            if (cleanHex.includes(',')) cleanHex = cleanHex.split(',')[0].trim();
+            if (cleanHex.length !== 6) return { rgb: "Invalid", cmyk: "Invalid" };
+
+            const r = parseInt(cleanHex.substring(0, 2), 16);
+            const g = parseInt(cleanHex.substring(2, 4), 16);
+            const b = parseInt(cleanHex.substring(4, 6), 16);
+
+            const rgbString = `${r}, ${g}, ${b}`;
+
+            let c = 0, m = 0, y = 0, k = 0;
+            let rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+            k = 1 - Math.max(rNorm, gNorm, bNorm);
+            if (k < 1) {
+                c = Math.round((1 - rNorm - k) / (1 - k) * 100);
+                m = Math.round((1 - gNorm - k) / (1 - k) * 100);
+                y = Math.round((1 - bNorm - k) / (1 - k) * 100);
+                k = Math.round(k * 100);
+            } else { k = 100; }
+
+            const cmykString = `${c}%, ${m}%, ${y}%, ${k}%`;
+            return { rgb: rgbString, cmyk: cmykString };
+        }
+
+        function isLightColor(hex) {
+             // ... same as before ...
+            let cleanHex = hex.replace('#', '').trim();
+            if (cleanHex.includes(',')) cleanHex = cleanHex.split(',')[0].trim();
+            if (cleanHex.length === 3) cleanHex = cleanHex.split('').map(c => c + c).join('');
+            
+            const r = parseInt(cleanHex.substring(0, 2), 16);
+            const g = parseInt(cleanHex.substring(2, 4), 16);
+            const b = parseInt(cleanHex.substring(4, 6), 16);
+            return ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.6;
+        }
+
+        // --- UI Rendering ---
+
+        function renderPalette(palette, parentContainer, themeTitle = null) {
+            if (themeTitle) {
+                const themeHeader = document.createElement('h4');
+                themeHeader.className = 'text-xl font-semibold mb-4 mt-6 text-fuchsia-200 border-b border-gray-700 pb-2';
+                themeHeader.textContent = themeTitle;
+                parentContainer.appendChild(themeHeader);
+            }
+
+            const container = document.createElement('div');
+            container.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+
+            palette.forEach(color => {
+                const block = document.createElement('div');
+                block.className = 'color-block card p-4 rounded-lg flex flex-col items-center cursor-pointer';
+                block.setAttribute('title', `Click to copy Hex: ${color.hex}`);
+                
+                const hexColor = color.hex.startsWith('#') ? color.hex : `#${color.hex}`;
+                const info = getDetailedColorInfo(hexColor);
+                
+                // Border/Text contrast logic
+                const isLight = isLightColor(hexColor);
+                const borderColor = isLight ? '#1E293B' : '#64748B';
+                const textColor = isLight ? '#1E293B' : '#F0F0F0';
+
+                block.style.borderColor = borderColor;
+                block.style.borderWidth = '2px';
+
+                const swatch = document.createElement('div');
+                swatch.className = 'w-full h-16 rounded-lg mb-3 shadow-lg';
+                // Handle gradients for dual colors
+                if (color.hex.includes(',')) {
+                    const parts = color.hex.split(',').map(c=>c.trim());
+                    swatch.style.background = `linear-gradient(135deg, ${parts[0]} 50%, ${parts[1]} 50%)`;
+                } else {
+                    swatch.style.backgroundColor = color.hex;
+                }
+                
+                block.innerHTML = `
+                    <div class="w-full h-16 rounded-lg mb-3 shadow-lg" style="${swatch.style.cssText}"></div>
+                    <p class="text-md font-bold truncate w-full text-center" style="color:${textColor}">${color.name}</p>
+                    <p class="text-sm font-mono text-gray-400">${color.hex}</p>
+                    <p class="text-xs text-gray-500 mt-1 font-mono">RGB: ${info.rgb}</p>
+                    <p class="text-xs text-gray-500 font-mono">CMYK: ${info.cmyk}</p>
+                `;
+
+                // Add to container
+                block.addEventListener('click', () => copyToClipboard(color.hex.split(',')[0].trim()));
+                container.appendChild(block);
+            });
+            parentContainer.appendChild(container);
+        }
+
+        function renderTrendsDetail(year, data) {
+            const container = document.getElementById('trendsDetailContent');
+            container.innerHTML = '';
+            
+            const colorYear = data.colorOfTheYear;
+            const palettes = data.trendingPalettes;
+            
+            const primaryHex = colorYear.hex.split(',')[0].trim();
+            const heroInfo = getDetailedColorInfo(primaryHex);
+            const isLightHero = isLightColor(primaryHex);
+            const heroTextColor = isLightHero ? 'text-gray-900' : 'text-white';
+            const heroBlend = isLightHero ? 'mix-blend-normal' : 'mix-blend-difference';
+
+            container.innerHTML += `
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-4xl font-extrabold text-fuchsia-400">Trends of ${year}</h2>
+                    <button onclick="renderView('homeView')" class="px-4 py-2 bg-gray-600 rounded-full text-sm hover:bg-gray-500 transition">← Back to Generator</button>
+                </div>
+            `;
+
+            const bgStyle = colorYear.hex.includes(',') 
+                ? `background: linear-gradient(135deg, ${colorYear.hex.split(',')[0]} 50%, ${colorYear.hex.split(',')[1]} 50%);`
+                : `background-color: ${colorYear.hex};`;
+
+            container.innerHTML += `
+                <div class="hero-color-block rounded-xl p-8 mb-8 shadow-inner" style="${bgStyle}">
+                    <p class="text-5xl md:text-6xl font-black ${heroTextColor} ${heroBlend} mt-4 text-center">${colorYear.name}</p>
+                    <p class="text-xl font-mono ${heroTextColor} ${heroBlend} mt-2">${colorYear.hex}</p>
+                    <p class="text-sm font-mono ${heroTextColor} ${heroBlend} mt-1">RGB: ${heroInfo.rgb} | CMYK: ${heroInfo.cmyk}</p>
+                    <p class="mt-4 max-w-2xl text-center text-lg ${heroTextColor} ${heroBlend}">${colorYear.description}</p>
+                </div>
+            `;
+
+            const palettesContainer = document.createElement('div');
+            palettesContainer.className = 'space-y-10';
+            const paletteHeader = document.createElement('h3');
+            paletteHeader.className = 'text-2xl font-semibold mb-6 text-fuchsia-400 border-b border-fuchsia-700 pb-2';
+            paletteHeader.textContent = `5 Key Palettes Defining ${year}`;
+            palettesContainer.appendChild(paletteHeader);
+
+            palettes.forEach((palette) => {
+                renderPalette(palette.colors, palettesContainer, palette.theme);
+            });
+            container.appendChild(palettesContainer);
+
+            initTrendsButtons(document.getElementById('trendsBottomButtons'), year);
+        }
+
+        // --- Standard API Logic for Generator (Unchanged) ---
+        // (Includes fileToBase64, exponentialBackoffFetch, fetchAuraHue, startGeneration, renderCitations, copyToClipboard, etc.)
+        function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); reader.readAsDataURL(file); }); }
+        async function exponentialBackoffFetch(url, options, maxRetries = 5, delay = 1000) { for (let i = 0; i < maxRetries; i++) { try { const response = await fetch(url, options); if (response.status !== 429) { return response; } } catch (error) { if (i === maxRetries - 1) throw error; } await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i))); } throw new Error('API request failed'); }
+        function renderView(viewId, data = null) { document.getElementById('homeView').classList.add('hidden'); document.getElementById('trendsDetailView').classList.add('hidden'); document.getElementById('loadingIndicator').classList.add('hidden'); document.getElementById('errorMessage').classList.add('hidden'); document.getElementById('citationArea').classList.add('hidden'); const viewElement = document.getElementById(viewId); if (viewElement) viewElement.classList.remove('hidden'); }
+        function sanitizeJsonString(jsonString) { return jsonString.replace(/^```(json|JSON)?\s*|```\s*$/g, '').trim(); }
+        async function fetchAuraHue(textPrompt, base64Image = null, mimeType = null) { const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`; const systemPrompt = "Generate a cohesive color palette of 5 to 7 colors. Respond with a JSON array (name, hex, description)."; const responseSchema = { type: "ARRAY", items: { type: "OBJECT", properties: { "name": { "type": "STRING" }, "hex": { "type": "STRING" }, "description": { "type": "STRING" } }, required: ["name", "hex", "description"] } }; const contentsParts = []; if (base64Image && mimeType) { contentsParts.push({ inlineData: { mimeType: mimeType, data: base64Image } }); contentsParts.push({ text: `Extract a color palette. Focus: ${textPrompt}` }); } else { contentsParts.push({ text: `Generate palette for: ${textPrompt}` }); } const payload = { contents: [{ parts: contentsParts }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json", responseSchema: responseSchema } }; const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }; const response = await exponentialBackoffFetch(apiUrl, options); const result = await response.json(); const candidate = result.candidates[0]; const palette = JSON.parse(sanitizeJsonString(candidate.content?.parts?.[0]?.text)); return { palette, sources: [] }; }
+        function generateTextPalette() { const textPrompt = document.getElementById('colorPrompt').value.trim(); if (textPrompt.length < 5) { document.getElementById('errorMessage').textContent = "Enter a descriptive concept."; document.getElementById('errorMessage').classList.remove('hidden'); return; } document.getElementById('imageUpload').value = ''; document.getElementById('imagePreview').classList.add('hidden'); startGeneration(textPrompt, null, null); }
+        function generateImagePalette() { const fileInput = document.getElementById('imageUpload'); const file = fileInput.files[0]; const textPrompt = document.getElementById('imagePrompt').value.trim() || 'Extract palette.'; if (!file) { document.getElementById('errorMessage').textContent = "Upload an image."; document.getElementById('errorMessage').classList.remove('hidden'); return; } const reader = new FileReader(); reader.onload = function(e) { const base64Image = e.target.result.split(',')[1]; const mimeType = file.type; document.getElementById('colorPrompt').value = ''; startGeneration(textPrompt, base64Image, mimeType); }; reader.readAsDataURL(file); }
+        async function startGeneration(textPrompt, base64Image = null, mimeType = null) { const loadingIndicator = document.getElementById('loadingIndicator'); const errorMessage = document.getElementById('errorMessage'); const generateButtons = document.querySelectorAll('.glow-button'); const outputDiv = document.getElementById('paletteOutput'); errorMessage.classList.add('hidden'); outputDiv.innerHTML = ''; generateButtons.forEach(btn => btn.disabled = true); loadingIndicator.classList.remove('hidden'); try { const { palette, sources } = await fetchAuraHue(textPrompt, base64Image, mimeType); renderPalette(palette, outputDiv); } catch (error) { errorMessage.textContent = error.message; errorMessage.classList.remove('hidden'); } finally { loadingIndicator.classList.add('hidden'); generateButtons.forEach(btn => btn.disabled = false); } }
+        function copyToClipboard(text) { const tempInput = document.createElement('input'); tempInput.value = text; document.body.appendChild(tempInput); tempInput.select(); document.execCommand('copy'); document.body.removeChild(tempInput); const notificationBox = document.getElementById('notification-box'); const notificationMessage = document.getElementById('notification-message'); notificationMessage.textContent = `${text} copied!`; notificationBox.classList.remove('opacity-0', 'translate-x-full'); notificationBox.classList.add('opacity-100', 'translate-x-0'); setTimeout(() => { notificationBox.classList.remove('opacity-100', 'translate-x-0'); notificationBox.classList.add('opacity-0', 'translate-x-full'); }, 1500); }
+        function initTrendsButtons(container, activeYear = null) { container.innerHTML = ''; for (let year = 2026; year >= 1955; year--) { const button = document.createElement('button'); button.textContent = year; button.className = `trend-year-button px-4 py-2 rounded-full bg-fuchsia-700 hover:bg-fuchsia-600 transition text-white font-medium text-sm`; button.setAttribute('onclick', `fetchAndRenderColorTrends(${year})`); if (year == activeYear) { button.classList.add('active'); } container.appendChild(button); } }
+        function highlightActiveYear(year) { document.querySelectorAll('.trend-year-button').forEach(btn => { btn.classList.remove('active'); if (parseInt(btn.textContent) === parseInt(year)) { btn.classList.add('active'); } }); }
+        document.getElementById('imageUpload').addEventListener('change', function(event) { const preview = document.getElementById('imagePreview'); const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { preview.src = e.target.result; preview.classList.remove('hidden'); }; reader.readAsDataURL(file); } else { preview.classList.add('hidden'); } });
+        document.addEventListener('DOMContentLoaded', () => { initTrendsButtons(document.getElementById('trendsHomeButtons')); });
+
+    </script>
+</body>
+</html>
